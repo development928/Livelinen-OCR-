@@ -230,7 +230,7 @@
     </section>
 
     <section class="panel" id="formPanel">
-      <h2>2. Review / edit details</h2>
+      <h2 id="formTitle">2. Review / edit details</h2>
       <form id="cardForm" novalidate>
         <div class="row">
           <div>
@@ -265,16 +265,23 @@
     // ——— Config ———
     const SUPABASE_URL = "https://xukgkqxkujygsupdjvvd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1a2drcXhrdWp5Z3N1cGRqdnZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTYwNTAsImV4cCI6MjA5NjIzMjA1MH0.N5hqWj9EvdrfEpwu6gVNuBwglRKlp-Z_lzJzKvdHyY4";
-
-    // n8n Webhook Production URL
     const N8N_OCR_WEBHOOK_URL = "https://n8n.livelinen.org/webhook/c0ddefcc-4deb-49e6-a8c0-72c49da00a64";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let supabase = null;
+    try {
+      if (window.supabase?.createClient) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (err) {
+      console.error("Supabase init failed", err);
+    }
 
     const el = {
       tabUpload: document.getElementById("tabUpload"),
       tabManual: document.getElementById("tabManual"),
       uploadPanel: document.getElementById("uploadPanel"),
+      formPanel: document.getElementById("formPanel"),
+      formTitle: document.getElementById("formTitle"),
       dropZone: document.getElementById("dropZone"),
       fileInput: document.getElementById("fileInput"),
       preview: document.getElementById("preview"),
@@ -294,6 +301,7 @@
     let selectedFile = null;
 
     function setStatus(node, message, type) {
+      if (!node) return;
       node.textContent = message || "";
       node.className = "status" + (type ? " " + type : "");
     }
@@ -339,6 +347,16 @@
       else addPhone();
     }
 
+    function clearForm() {
+      fillForm({
+        first_name: "",
+        last_name: "",
+        company_name: "",
+        emails: [],
+        phone_numbers: [],
+      });
+    }
+
     function readPhones() {
       return Array.from(el.phones.querySelectorAll(".phone-block"))
         .map((block) => ({
@@ -372,15 +390,20 @@
       el.tabUpload.classList.add("active");
       el.tabManual.classList.remove("active");
       el.uploadPanel.classList.remove("hidden");
+      if (el.formTitle) el.formTitle.textContent = "2. Review / edit details";
+      setStatus(el.saveStatus, "");
     }
 
     function showManualMode() {
       el.tabManual.classList.add("active");
       el.tabUpload.classList.remove("active");
       el.uploadPanel.classList.add("hidden");
+      if (el.formTitle) el.formTitle.textContent = "Enter details manually";
       setStatus(el.ocrStatus, "");
+      setStatus(el.saveStatus, "Type the card details, then Save.", "");
       if (!el.phones.children.length) addPhone();
-      el.first_name.focus();
+      el.formPanel?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => el.first_name.focus(), 50);
     }
 
     el.tabUpload.addEventListener("click", showUploadMode);
@@ -405,7 +428,7 @@
       if (!N8N_OCR_WEBHOOK_URL) {
         setStatus(
           el.ocrStatus,
-          "Set N8N_OCR_WEBHOOK_URL in index.html first (n8n Webhook Production URL).",
+          "OCR webhook URL is missing in index.html.",
           "error"
         );
         return;
@@ -451,6 +474,12 @@
       setStatus(el.saveStatus, "");
       el.saveBtn.disabled = true;
 
+      if (!supabase) {
+        el.saveBtn.disabled = false;
+        setStatus(el.saveStatus, "Save unavailable: Supabase failed to load. Refresh the page.", "error");
+        return;
+      }
+
       const payload = {
         first_name: el.first_name.value.trim(),
         last_name: el.last_name.value.trim(),
@@ -477,6 +506,7 @@
       setStatus(el.saveStatus, "Saved. ID: " + data.id, "ok");
     });
 
+    // Init UI even if Supabase/OCR later fail
     addPhone();
   </script>
 </body>
