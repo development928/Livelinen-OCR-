@@ -212,6 +212,18 @@
 
     const params = new URLSearchParams(window.location.search);
     const draftId = params.get("draft_id");
+    const isDemo = params.get("demo") === "1";
+
+    const DEMO_CARD = {
+      first_name: "Priya",
+      last_name: "Sharma",
+      company_name: "Livelinen Textiles",
+      emails: ["priya.sharma@livelinen.com", "sales@livelinen.com"],
+      phone_numbers: [
+        { type: "mobile", number: "+91 98765 43210" },
+        { type: "office", number: "+91 22 1234 5678" },
+      ],
+    };
 
     const el = {
       missingId: document.getElementById("missingId"),
@@ -278,7 +290,29 @@
         .filter(Boolean);
     }
 
+    function fillForm(data) {
+      el.first_name.value = data.first_name || "";
+      el.last_name.value = data.last_name || "";
+      el.company_name.value = data.company_name || "";
+      el.emails.value = Array.isArray(data.emails) ? data.emails.join("\n") : "";
+
+      const phones = Array.isArray(data.phone_numbers) ? data.phone_numbers : [];
+      el.phones.innerHTML = "";
+      if (phones.length) phones.forEach(addPhone);
+      else addPhone();
+
+      el.loading.classList.add("hidden");
+      el.form.classList.remove("hidden");
+    }
+
     async function loadDraft() {
+      // UI-only test mode — no Supabase required
+      if (isDemo) {
+        fillForm(DEMO_CARD);
+        setStatus("Demo mode — edits are not saved to a database.", "");
+        return;
+      }
+
       if (!draftId) {
         el.loading.classList.add("hidden");
         el.missingId.classList.remove("hidden");
@@ -291,9 +325,8 @@
         .eq("id", draftId)
         .single();
 
-      el.loading.classList.add("hidden");
-
       if (error || !data) {
+        el.loading.classList.add("hidden");
         el.missingId.classList.remove("hidden");
         el.missingId.querySelector("p").textContent =
           "Could not load this draft. It may have been deleted, or the table is not set up yet.";
@@ -301,17 +334,7 @@
         return;
       }
 
-      el.first_name.value = data.first_name || "";
-      el.last_name.value = data.last_name || "";
-      el.company_name.value = data.company_name || "";
-      el.emails.value = Array.isArray(data.emails) ? data.emails.join("\n") : "";
-
-      const phones = Array.isArray(data.phone_numbers) ? data.phone_numbers : [];
-      el.phones.innerHTML = "";
-      if (phones.length) phones.forEach(addPhone);
-      else addPhone();
-
-      el.form.classList.remove("hidden");
+      fillForm(data);
     }
 
     el.addPhone.addEventListener("click", () => addPhone());
@@ -329,6 +352,13 @@
         phone_numbers: readPhones(),
         status: "final",
       };
+
+      if (isDemo) {
+        console.log("Demo save payload:", payload);
+        el.saveBtn.disabled = false;
+        setStatus("Demo save OK (not written to Supabase).", "ok");
+        return;
+      }
 
       const { error } = await supabase
         .from("visiting_cards")
