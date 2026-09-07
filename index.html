@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Livelinen Card Scanner</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #f3f5f7;
@@ -19,9 +18,7 @@
       --radius: 14px;
       --font: "Segoe UI", system-ui, -apple-system, sans-serif;
     }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: var(--font);
@@ -32,9 +29,7 @@
       min-height: 100vh;
       padding: 24px 16px 40px;
     }
-
     .wrap { max-width: 560px; margin: 0 auto; }
-
     .brand {
       font-size: 0.85rem;
       letter-spacing: 0.08em;
@@ -42,19 +37,8 @@
       color: var(--hint);
       margin: 0 0 8px;
     }
-
-    h1 {
-      margin: 0 0 8px;
-      font-size: 1.7rem;
-      line-height: 1.2;
-    }
-
-    .sub {
-      margin: 0 0 24px;
-      color: var(--hint);
-      line-height: 1.45;
-    }
-
+    h1 { margin: 0 0 8px; font-size: 1.7rem; line-height: 1.2; }
+    .sub { margin: 0 0 24px; color: var(--hint); line-height: 1.45; }
     .panel {
       background: var(--card);
       border: 1px solid var(--line);
@@ -62,12 +46,7 @@
       padding: 18px;
       margin-bottom: 16px;
     }
-
-    .panel h2 {
-      margin: 0 0 12px;
-      font-size: 1rem;
-    }
-
+    .panel h2 { margin: 0 0 12px; font-size: 1rem; }
     .drop {
       border: 1.5px dashed #9db5c4;
       border-radius: 12px;
@@ -76,10 +55,8 @@
       background: #f8fbfd;
       cursor: pointer;
     }
-
     .drop strong { display: block; margin-bottom: 6px; }
     .drop span { color: var(--hint); font-size: 0.9rem; }
-
     .preview {
       margin-top: 12px;
       max-width: 100%;
@@ -87,7 +64,6 @@
       border-radius: 10px;
       display: none;
     }
-
     label {
       display: block;
       margin: 12px 0 6px;
@@ -95,9 +71,7 @@
       font-weight: 600;
       color: var(--hint);
     }
-
     label:first-child { margin-top: 0; }
-
     input, textarea {
       width: 100%;
       border: 1px solid var(--line);
@@ -108,20 +82,16 @@
       background: #fff;
       outline: none;
     }
-
     input:focus, textarea:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(15, 110, 86, 0.15);
     }
-
     textarea { min-height: 84px; resize: vertical; }
-
     .row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-
     .phone-block {
       border: 1px dashed var(--line);
       border-radius: 10px;
@@ -129,14 +99,12 @@
       margin-top: 8px;
       background: #f8fbfd;
     }
-
     .actions {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 12px;
     }
-
     button {
       font: inherit;
       border: none;
@@ -144,7 +112,6 @@
       padding: 12px 14px;
       cursor: pointer;
     }
-
     .btn-primary {
       background: var(--accent);
       color: var(--accent-text);
@@ -152,53 +119,40 @@
       width: 100%;
       margin-top: 8px;
     }
-
-    .btn-primary:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-secondary {
       background: #e8eef3;
       color: var(--text);
       flex: 1;
     }
-
     .btn-danger {
       background: #fff;
       color: var(--danger);
       border: 1px solid #f3c0bb;
     }
-
     .status {
       min-height: 1.3em;
       margin-top: 10px;
       font-size: 0.92rem;
     }
-
     .status.error { color: var(--danger); }
     .status.ok { color: var(--ok); }
-
     .tabs {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-bottom: 16px;
     }
-
     .tab {
       background: #e8eef3;
       color: var(--text);
       font-weight: 600;
     }
-
     .tab.active {
       background: var(--accent);
       color: var(--accent-text);
     }
-
     .hidden { display: none !important; }
-
     @media (max-width: 520px) {
       .row { grid-template-columns: 1fr; }
     }
@@ -219,7 +173,7 @@
       <h2>1. Upload card image</h2>
       <div class="drop" id="dropZone">
         <strong>Click to choose image</strong>
-        <span>JPG, PNG — then run OCR</span>
+        <span>JPG, PNG then run OCR</span>
         <input type="file" id="fileInput" accept="image/*" hidden />
       </div>
       <img id="preview" class="preview" alt="Card preview" />
@@ -246,13 +200,13 @@
         <label for="company_name">Company</label>
         <input id="company_name" name="company_name" autocomplete="organization" />
 
-        <label for="emails">Emails <span style="font-weight:400">(one per line)</span></label>
+        <label for="emails">Emails (one per line)</label>
         <textarea id="emails" placeholder="name@company.com"></textarea>
 
         <label>Phone numbers</label>
         <div id="phones"></div>
         <div class="actions">
-          <button type="button" class="btn-secondary" id="addPhone">+ Add phone</button>
+          <button type="button" class="btn-secondary" id="addPhoneBtn">+ Add phone</button>
         </div>
 
         <button type="submit" class="btn-primary" id="saveBtn">Save card</button>
@@ -261,253 +215,223 @@
     </section>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ——— Config ———
-    const SUPABASE_URL = "https://xukgkqxkujygsupdjvvd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1a2drcXhrdWp5Z3N1cGRqdnZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTYwNTAsImV4cCI6MjA5NjIzMjA1MH0.N5hqWj9EvdrfEpwu6gVNuBwglRKlp-Z_lzJzKvdHyY4";
-    const N8N_OCR_WEBHOOK_URL = "https://n8n.livelinen.org/webhook/c0ddefcc-4deb-49e6-a8c0-72c49da00a64";
+    (function () {
+      var SUPABASE_URL = "https://xukgkqxkujygsupdjvvd.supabase.co";
+      var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1a2drcXhrdWp5Z3N1cGRqdnZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTYwNTAsImV4cCI6MjA5NjIzMjA1MH0.N5hqWj9EvdrfEpwu6gVNuBwglRKlp-Z_lzJzKvdHyY4";
+      var N8N_OCR_WEBHOOK_URL = "https://n8n.livelinen.org/webhook/c0ddefcc-4deb-49e6-a8c0-72c49da00a64";
 
-    let supabase = null;
-    try {
-      if (window.supabase?.createClient) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      var db = null;
+      var selectedFile = null;
+
+      function $(id) {
+        return document.getElementById(id);
       }
-    } catch (err) {
-      console.error("Supabase init failed", err);
-    }
 
-    const el = {
-      tabUpload: document.getElementById("tabUpload"),
-      tabManual: document.getElementById("tabManual"),
-      uploadPanel: document.getElementById("uploadPanel"),
-      formPanel: document.getElementById("formPanel"),
-      formTitle: document.getElementById("formTitle"),
-      dropZone: document.getElementById("dropZone"),
-      fileInput: document.getElementById("fileInput"),
-      preview: document.getElementById("preview"),
-      ocrBtn: document.getElementById("ocrBtn"),
-      ocrStatus: document.getElementById("ocrStatus"),
-      form: document.getElementById("cardForm"),
-      first_name: document.getElementById("first_name"),
-      last_name: document.getElementById("last_name"),
-      company_name: document.getElementById("company_name"),
-      emails: document.getElementById("emails"),
-      phones: document.getElementById("phones"),
-      addPhone: document.getElementById("addPhone"),
-      saveBtn: document.getElementById("saveBtn"),
-      saveStatus: document.getElementById("saveStatus"),
-    };
+      function setStatus(node, message, type) {
+        if (!node) return;
+        node.textContent = message || "";
+        node.className = "status" + (type ? " " + type : "");
+      }
 
-    let selectedFile = null;
+      function escapeAttr(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;");
+      }
 
-    function setStatus(node, message, type) {
-      if (!node) return;
-      node.textContent = message || "";
-      node.className = "status" + (type ? " " + type : "");
-    }
+      function addPhoneRow(phone) {
+        phone = phone || { type: "mobile", number: "" };
+        var wrap = document.createElement("div");
+        wrap.className = "phone-block";
+        wrap.innerHTML =
+          "<label>Type</label>" +
+          '<input class="phone-type" value="' + escapeAttr(phone.type || "mobile") + '" placeholder="mobile / office / fax" />' +
+          "<label>Number</label>" +
+          '<input class="phone-number" value="' + escapeAttr(phone.number || "") + '" placeholder="+91..." inputmode="tel" />' +
+          '<div class="actions"><button type="button" class="btn-danger remove-phone">Remove</button></div>';
 
-    function escapeAttr(value) {
-      return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/</g, "&lt;");
-    }
-
-    function phoneRow(phone = { type: "mobile", number: "" }) {
-      const wrap = document.createElement("div");
-      wrap.className = "phone-block";
-      wrap.innerHTML = `
-        <label>Type</label>
-        <input class="phone-type" value="${escapeAttr(phone.type || "mobile")}" placeholder="mobile / office / fax" />
-        <label>Number</label>
-        <input class="phone-number" value="${escapeAttr(phone.number || "")}" placeholder="+91..." inputmode="tel" />
-        <div class="actions">
-          <button type="button" class="btn-danger remove-phone">Remove</button>
-        </div>
-      `;
-      wrap.querySelector(".remove-phone").addEventListener("click", () => {
-        wrap.remove();
-        if (!el.phones.children.length) addPhone();
-      });
-      return wrap;
-    }
-
-    function addPhone(phone) {
-      el.phones.appendChild(phoneRow(phone));
-    }
-
-    function fillForm(data) {
-      el.first_name.value = data.first_name || "";
-      el.last_name.value = data.last_name || "";
-      el.company_name.value = data.company_name || "";
-      el.emails.value = Array.isArray(data.emails) ? data.emails.join("\n") : "";
-      el.phones.innerHTML = "";
-      const phones = Array.isArray(data.phone_numbers) ? data.phone_numbers : [];
-      if (phones.length) phones.forEach(addPhone);
-      else addPhone();
-    }
-
-    function clearForm() {
-      fillForm({
-        first_name: "",
-        last_name: "",
-        company_name: "",
-        emails: [],
-        phone_numbers: [],
-      });
-    }
-
-    function readPhones() {
-      return Array.from(el.phones.querySelectorAll(".phone-block"))
-        .map((block) => ({
-          type: block.querySelector(".phone-type").value.trim() || "other",
-          number: block.querySelector(".phone-number").value.trim(),
-        }))
-        .filter((p) => p.number);
-    }
-
-    function readEmails() {
-      return el.emails.value
-        .split(/\r?\n|,|;/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = String(reader.result || "");
-          const base64 = result.includes(",") ? result.split(",")[1] : result;
-          resolve(base64);
+        wrap.querySelector(".remove-phone").onclick = function () {
+          wrap.remove();
+          if ($("phones").children.length === 0) addPhoneRow();
         };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function showUploadMode() {
-      el.tabUpload.classList.add("active");
-      el.tabManual.classList.remove("active");
-      el.uploadPanel.classList.remove("hidden");
-      if (el.formTitle) el.formTitle.textContent = "2. Review / edit details";
-      setStatus(el.saveStatus, "");
-    }
-
-    function showManualMode() {
-      el.tabManual.classList.add("active");
-      el.tabUpload.classList.remove("active");
-      el.uploadPanel.classList.add("hidden");
-      if (el.formTitle) el.formTitle.textContent = "Enter details manually";
-      setStatus(el.ocrStatus, "");
-      setStatus(el.saveStatus, "Type the card details, then Save.", "");
-      if (!el.phones.children.length) addPhone();
-      el.formPanel?.scrollIntoView({ behavior: "smooth", block: "start" });
-      setTimeout(() => el.first_name.focus(), 50);
-    }
-
-    el.tabUpload.addEventListener("click", showUploadMode);
-    el.tabManual.addEventListener("click", showManualMode);
-
-    el.dropZone.addEventListener("click", () => el.fileInput.click());
-    el.fileInput.addEventListener("change", () => {
-      const file = el.fileInput.files?.[0];
-      if (!file) return;
-      selectedFile = file;
-      el.preview.src = URL.createObjectURL(file);
-      el.preview.style.display = "block";
-      el.ocrBtn.disabled = false;
-      setStatus(el.ocrStatus, "Image ready. Click Run OCR.", "");
-    });
-
-    el.addPhone.addEventListener("click", () => addPhone());
-
-    el.ocrBtn.addEventListener("click", async () => {
-      if (!selectedFile) return;
-
-      if (!N8N_OCR_WEBHOOK_URL) {
-        setStatus(
-          el.ocrStatus,
-          "OCR webhook URL is missing in index.html.",
-          "error"
-        );
-        return;
+        $("phones").appendChild(wrap);
       }
 
-      el.ocrBtn.disabled = true;
-      setStatus(el.ocrStatus, "Running OCR…", "");
-
-      try {
-        const imageBase64 = await fileToBase64(selectedFile);
-        const res = await fetch(N8N_OCR_WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: selectedFile.name,
-            mimeType: selectedFile.type || "image/jpeg",
-            imageBase64,
-          }),
-        });
-
-        if (!res.ok) {
-          throw new Error("OCR webhook failed (" + res.status + ")");
+      function fillForm(data) {
+        $("first_name").value = data.first_name || "";
+        $("last_name").value = data.last_name || "";
+        $("company_name").value = data.company_name || "";
+        $("emails").value = Object.prototype.toString.call(data.emails) === "[object Array]"
+          ? data.emails.join("\n")
+          : "";
+        $("phones").innerHTML = "";
+        var phones = data.phone_numbers || [];
+        if (phones.length) {
+          for (var i = 0; i < phones.length; i++) addPhoneRow(phones[i]);
+        } else {
+          addPhoneRow();
         }
-
-        const data = await res.json();
-        fillForm(data);
-        setStatus(el.ocrStatus, "OCR done. Review the form below.", "ok");
-      } catch (err) {
-        console.error(err);
-        setStatus(
-          el.ocrStatus,
-          "OCR failed: " + (err.message || "unknown error") + ". You can still type manually.",
-          "error"
-        );
-        showManualMode();
-      } finally {
-        el.ocrBtn.disabled = !selectedFile;
-      }
-    });
-
-    el.form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      setStatus(el.saveStatus, "");
-      el.saveBtn.disabled = true;
-
-      if (!supabase) {
-        el.saveBtn.disabled = false;
-        setStatus(el.saveStatus, "Save unavailable: Supabase failed to load. Refresh the page.", "error");
-        return;
       }
 
-      const payload = {
-        first_name: el.first_name.value.trim(),
-        last_name: el.last_name.value.trim(),
-        company_name: el.company_name.value.trim(),
-        emails: readEmails(),
-        phone_numbers: readPhones(),
-        status: "final",
-      };
-
-      const { data, error } = await supabase
-        .from("visiting_cards")
-        .insert(payload)
-        .select("id")
-        .single();
-
-      el.saveBtn.disabled = false;
-
-      if (error) {
-        setStatus(el.saveStatus, "Save failed: " + error.message, "error");
-        console.error(error);
-        return;
+      function readEmails() {
+        return $("emails").value
+          .split(/\r?\n|,|;/)
+          .map(function (s) { return s.trim(); })
+          .filter(Boolean);
       }
 
-      setStatus(el.saveStatus, "Saved. ID: " + data.id, "ok");
-    });
+      function readPhones() {
+        var blocks = $("phones").querySelectorAll(".phone-block");
+        var out = [];
+        for (var i = 0; i < blocks.length; i++) {
+          var number = blocks[i].querySelector(".phone-number").value.trim();
+          if (!number) continue;
+          out.push({
+            type: blocks[i].querySelector(".phone-type").value.trim() || "other",
+            number: number,
+          });
+        }
+        return out;
+      }
 
-    // Init UI even if Supabase/OCR later fail
-    addPhone();
+      function showUploadMode() {
+        $("tabUpload").classList.add("active");
+        $("tabManual").classList.remove("active");
+        $("uploadPanel").classList.remove("hidden");
+        $("formTitle").textContent = "2. Review / edit details";
+        setStatus($("saveStatus"), "");
+      }
+
+      function showManualMode() {
+        $("tabManual").classList.add("active");
+        $("tabUpload").classList.remove("active");
+        $("uploadPanel").classList.add("hidden");
+        $("formTitle").textContent = "Enter details manually";
+        setStatus($("ocrStatus"), "");
+        setStatus($("saveStatus"), "Type the card details, then Save.");
+        if ($("phones").children.length === 0) addPhoneRow();
+        $("formPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(function () { $("first_name").focus(); }, 50);
+      }
+
+      function fileToBase64(file) {
+        return new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function () {
+            var result = String(reader.result || "");
+            resolve(result.indexOf(",") >= 0 ? result.split(",")[1] : result);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function initDb() {
+        try {
+          if (window.supabase && typeof window.supabase.createClient === "function") {
+            db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      function bindUi() {
+        $("tabUpload").onclick = showUploadMode;
+        $("tabManual").onclick = showManualMode;
+
+        $("dropZone").onclick = function () {
+          $("fileInput").click();
+        };
+
+        $("fileInput").onchange = function () {
+          var file = $("fileInput").files && $("fileInput").files[0];
+          if (!file) return;
+          selectedFile = file;
+          $("preview").src = URL.createObjectURL(file);
+          $("preview").style.display = "block";
+          $("ocrBtn").disabled = false;
+          setStatus($("ocrStatus"), "Image ready. Click Run OCR.");
+        };
+
+        $("addPhoneBtn").onclick = function () {
+          addPhoneRow();
+        };
+
+        $("ocrBtn").onclick = async function () {
+          if (!selectedFile) return;
+          $("ocrBtn").disabled = true;
+          setStatus($("ocrStatus"), "Running OCR...");
+
+          try {
+            var imageBase64 = await fileToBase64(selectedFile);
+            var res = await fetch(N8N_OCR_WEBHOOK_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                filename: selectedFile.name,
+                mimeType: selectedFile.type || "image/jpeg",
+                imageBase64: imageBase64,
+              }),
+            });
+            if (!res.ok) throw new Error("OCR webhook failed (" + res.status + ")");
+            var data = await res.json();
+            fillForm(data);
+            setStatus($("ocrStatus"), "OCR done. Review the form below.", "ok");
+          } catch (err) {
+            console.error(err);
+            setStatus(
+              $("ocrStatus"),
+              "OCR failed: " + (err.message || "unknown error") + ". You can still type manually.",
+              "error"
+            );
+            showManualMode();
+          } finally {
+            $("ocrBtn").disabled = !selectedFile;
+          }
+        };
+
+        $("cardForm").onsubmit = async function (event) {
+          event.preventDefault();
+          setStatus($("saveStatus"), "");
+          $("saveBtn").disabled = true;
+
+          if (!db) {
+            $("saveBtn").disabled = false;
+            setStatus($("saveStatus"), "Save unavailable. Refresh the page.", "error");
+            return;
+          }
+
+          var payload = {
+            first_name: $("first_name").value.trim(),
+            last_name: $("last_name").value.trim(),
+            company_name: $("company_name").value.trim(),
+            emails: readEmails(),
+            phone_numbers: readPhones(),
+            status: "final",
+          };
+
+          var result = await db.from("visiting_cards").insert(payload).select("id").single();
+          $("saveBtn").disabled = false;
+
+          if (result.error) {
+            setStatus($("saveStatus"), "Save failed: " + result.error.message, "error");
+            console.error(result.error);
+            return;
+          }
+
+          setStatus($("saveStatus"), "Saved. ID: " + result.data.id, "ok");
+        };
+
+        addPhoneRow();
+      }
+
+      initDb();
+      bindUi();
+    })();
   </script>
 </body>
 </html>
