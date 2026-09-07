@@ -255,7 +255,7 @@
           <input type="file" id="fileFront" accept="image/*" capture="environment" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
           <img id="previewFront" class="preview" alt="Front preview" />
           <div class="side-actions">
-            <button type="button" class="btn-secondary" onclick="document.getElementById('fileFront').click()">Choose front</button>
+            <button type="button" class="btn-secondary" onclick="llPickSide('front')">Choose front</button>
             <button type="button" class="btn-danger" onclick="llClearSide('front')">Clear</button>
           </div>
         </div>
@@ -272,7 +272,7 @@
           <input type="file" id="fileBack" accept="image/*" capture="environment" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
           <img id="previewBack" class="preview" alt="Back preview" />
           <div class="side-actions">
-            <button type="button" class="btn-secondary" onclick="document.getElementById('fileBack').click()">Choose back</button>
+            <button type="button" class="btn-secondary" onclick="llPickSide('back')">Choose back</button>
             <button type="button" class="btn-danger" onclick="llClearSide('back')">Clear</button>
           </div>
         </div>
@@ -319,6 +319,8 @@
     var llDb = null;
     var llFrontFile = null;
     var llBackFile = null;
+    var llFrontPreviewUrl = null;
+    var llBackPreviewUrl = null;
     var LL_SUPABASE_URL = "https://xukgkqxkujygsupdjvvd.supabase.co";
     var LL_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1a2drcXhrdWp5Z3N1cGRqdnZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTYwNTAsImV4cCI6MjA5NjIzMjA1MH0.N5hqWj9EvdrfEpwu6gVNuBwglRKlp-Z_lzJzKvdHyY4";
     var LL_OCR_URL = "https://n8n.livelinen.org/webhook/c0ddefcc-4deb-49e6-a8c0-72c49da00a64";
@@ -358,15 +360,30 @@
       }
     }
 
+    function llPickSide(side) {
+      var input = llEl(side === "front" ? "fileFront" : "fileBack");
+      // Reset so choosing a new file (even same name) always fires change
+      input.value = "";
+      input.click();
+    }
+
     function llClearSide(side) {
       if (side === "front") {
         llFrontFile = null;
         llEl("fileFront").value = "";
+        if (llFrontPreviewUrl) {
+          try { URL.revokeObjectURL(llFrontPreviewUrl); } catch (e) {}
+          llFrontPreviewUrl = null;
+        }
         llEl("previewFront").removeAttribute("src");
         llEl("previewFront").style.display = "none";
       } else {
         llBackFile = null;
         llEl("fileBack").value = "";
+        if (llBackPreviewUrl) {
+          try { URL.revokeObjectURL(llBackPreviewUrl); } catch (e) {}
+          llBackPreviewUrl = null;
+        }
         llEl("previewBack").removeAttribute("src");
         llEl("previewBack").style.display = "none";
       }
@@ -471,47 +488,79 @@
       llEl(inputId).onchange = function () {
         var file = llEl(inputId).files && llEl(inputId).files[0];
         if (!file) return;
-        if (side === "front") llFrontFile = file;
-        else llBackFile = file;
-        llEl(previewId).src = URL.createObjectURL(file);
+
+        var url = URL.createObjectURL(file);
+        if (side === "front") {
+          llFrontFile = file;
+          if (llFrontPreviewUrl) {
+            try { URL.revokeObjectURL(llFrontPreviewUrl); } catch (e) {}
+          }
+          llFrontPreviewUrl = url;
+        } else {
+          llBackFile = file;
+          if (llBackPreviewUrl) {
+            try { URL.revokeObjectURL(llBackPreviewUrl); } catch (e) {}
+          }
+          llBackPreviewUrl = url;
+        }
+
+        llEl(previewId).src = url;
         llEl(previewId).style.display = "block";
         llUpdateOcrButton();
         if (llFrontFile && llBackFile) {
-          llSetStatus("ocrStatus", "Front + back ready. Click Run OCR.");
+          llSetStatus("ocrStatus", "Front + back ready (" + llFrontFile.name + " / " + llBackFile.name + "). Click Run OCR.");
         } else if (llFrontFile) {
-          llSetStatus("ocrStatus", "Front ready. Add back (optional) or click Run OCR.");
+          llSetStatus("ocrStatus", "Front ready (" + llFrontFile.name + "). Add back (optional) or click Run OCR.");
         }
         llShowUpload();
       };
     }
 
+    function llCurrentFiles() {
+      // Prefer live <input> FileList; fall back to stored File (after re-pick reset)
+      var frontFromInput = llEl("fileFront").files && llEl("fileFront").files[0];
+      var backFromInput = llEl("fileBack").files && llEl("fileBack").files[0];
+      if (frontFromInput) llFrontFile = frontFromInput;
+      if (backFromInput) llBackFile = backFromInput;
+      return { front: llFrontFile, back: llBackFile };
+    }
+
     function llRunOcr() {
-      if (!llFrontFile) {
+      var files = llCurrentFiles();
+      if (!files.front) {
         llSetStatus("ocrStatus", "Choose a front image first.", "error");
         return;
       }
 
       llEl("ocrBtn").disabled = true;
-      llSetStatus("ocrStatus", llBackFile ? "Running OCR on front + back..." : "Running OCR on front...");
+      llSetStatus(
+        "ocrStatus",
+        files.back
+          ? "Running OCR on front + back (" + files.front.name + " / " + files.back.name + ")..."
+          : "Running OCR on front (" + files.front.name + ")..."
+      );
 
-      var tasks = [llFileToBase64(llFrontFile)];
-      if (llBackFile) tasks.push(llFileToBase64(llBackFile));
+      var tasks = [llFileToBase64(files.front)];
+      if (files.back) tasks.push(llFileToBase64(files.back));
 
       Promise.all(tasks).then(function (parts) {
         var payload = {
-          filenameFront: llFrontFile.name,
-          mimeTypeFront: llFrontFile.type || "image/jpeg",
+          filenameFront: files.front.name,
+          mimeTypeFront: files.front.type || "image/jpeg",
           imageBase64Front: parts[0],
+          imageSizeFront: parts[0].length,
+          clientUploadId: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8),
           // keep old single-image keys for compatibility
-          filename: llFrontFile.name,
-          mimeType: llFrontFile.type || "image/jpeg",
+          filename: files.front.name,
+          mimeType: files.front.type || "image/jpeg",
           imageBase64: parts[0]
         };
 
-        if (llBackFile) {
-          payload.filenameBack = llBackFile.name;
-          payload.mimeTypeBack = llBackFile.type || "image/jpeg";
+        if (files.back) {
+          payload.filenameBack = files.back.name;
+          payload.mimeTypeBack = files.back.type || "image/jpeg";
           payload.imageBase64Back = parts[1];
+          payload.imageSizeBack = parts[1].length;
           payload.hasBack = true;
         } else {
           payload.hasBack = false;
