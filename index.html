@@ -53,15 +53,52 @@
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
+    .side-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fbfcfd;
+    }
+    .side-card.ready {
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+      background: #f3faf7;
+    }
+    .side-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #e8eef3;
+      color: var(--hint);
+    }
+    .badge.on {
+      background: #d8f3e7;
+      color: var(--ok);
+    }
+    .badge.req {
+      background: #fff4ce;
+      color: #8a6d00;
+    }
     .drop {
       display: block;
       border: 1.5px dashed #9db5c4;
       border-radius: 12px;
-      padding: 20px 12px;
+      padding: 18px 12px;
       text-align: center;
-      background: #f8fbfd;
+      background: #fff;
       cursor: pointer;
-      min-height: 110px;
+      min-height: 96px;
     }
     .drop strong { display: block; margin-bottom: 6px; color: var(--text); }
     .drop span { color: var(--hint); font-size: 0.85rem; }
@@ -74,6 +111,18 @@
       display: none;
       background: #fff;
       border: 1px solid var(--line);
+    }
+    .side-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .side-actions button {
+      flex: 1;
+      margin-top: 0;
+      width: auto;
+      padding: 10px 12px;
+      font-size: 0.9rem;
     }
     label.field {
       display: block;
@@ -191,28 +240,45 @@
     </div>
 
     <section class="panel" id="uploadPanel">
-      <h2>1. Upload card images</h2>
-      <p class="hint">Front is required. Back is optional but improves OCR.</p>
+      <h2>1. Choose dedicated card sides</h2>
+      <p class="hint">Use both options when possible. Front is required. Back is optional.</p>
       <div class="upload-grid">
-        <div>
+        <div class="side-card" id="cardFront">
+          <p class="side-title">
+            <span>Option A — Front</span>
+            <span class="badge req" id="badgeFront">Required</span>
+          </p>
           <label class="drop" for="fileFront">
-            <strong>Front</strong>
-            <span>Click to choose</span>
+            <strong>Upload front image</strong>
+            <span>JPG / PNG</span>
           </label>
           <input type="file" id="fileFront" accept="image/*" capture="environment" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
           <img id="previewFront" class="preview" alt="Front preview" />
+          <div class="side-actions">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('fileFront').click()">Choose front</button>
+            <button type="button" class="btn-danger" onclick="llClearSide('front')">Clear</button>
+          </div>
         </div>
-        <div>
+
+        <div class="side-card" id="cardBack">
+          <p class="side-title">
+            <span>Option B — Back</span>
+            <span class="badge" id="badgeBack">Optional</span>
+          </p>
           <label class="drop" for="fileBack">
-            <strong>Back</strong>
-            <span>Optional</span>
+            <strong>Upload back image</strong>
+            <span>JPG / PNG</span>
           </label>
           <input type="file" id="fileBack" accept="image/*" capture="environment" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
           <img id="previewBack" class="preview" alt="Back preview" />
+          <div class="side-actions">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('fileBack').click()">Choose back</button>
+            <button type="button" class="btn-danger" onclick="llClearSide('back')">Clear</button>
+          </div>
         </div>
       </div>
       <div class="actions">
-        <button type="button" class="btn-primary" id="ocrBtn" onclick="llRunOcr()" disabled>Run OCR</button>
+        <button type="button" class="btn-primary" id="ocrBtn" onclick="llRunOcr()" disabled>Run OCR on selected sides</button>
       </div>
       <p class="status" id="ocrStatus" role="status"></p>
     </section>
@@ -268,6 +334,46 @@
 
     function llUpdateOcrButton() {
       llEl("ocrBtn").disabled = !llFrontFile;
+      llUpdateSideUi("front", llFrontFile);
+      llUpdateSideUi("back", llBackFile);
+    }
+
+    function llUpdateSideUi(side, file) {
+      var card = llEl(side === "front" ? "cardFront" : "cardBack");
+      var badge = llEl(side === "front" ? "badgeFront" : "badgeBack");
+      if (!card || !badge) return;
+      if (file) {
+        card.className = "side-card ready";
+        badge.className = "badge on";
+        badge.textContent = "Selected";
+      } else {
+        card.className = "side-card";
+        if (side === "front") {
+          badge.className = "badge req";
+          badge.textContent = "Required";
+        } else {
+          badge.className = "badge";
+          badge.textContent = "Optional";
+        }
+      }
+    }
+
+    function llClearSide(side) {
+      if (side === "front") {
+        llFrontFile = null;
+        llEl("fileFront").value = "";
+        llEl("previewFront").removeAttribute("src");
+        llEl("previewFront").style.display = "none";
+      } else {
+        llBackFile = null;
+        llEl("fileBack").value = "";
+        llEl("previewBack").removeAttribute("src");
+        llEl("previewBack").style.display = "none";
+      }
+      llUpdateOcrButton();
+      if (llFrontFile && llBackFile) llSetStatus("ocrStatus", "Front + back ready. Click Run OCR.");
+      else if (llFrontFile) llSetStatus("ocrStatus", "Front ready. Add back (optional) or click Run OCR.");
+      else llSetStatus("ocrStatus", "Choose Option A (Front) to continue.");
     }
 
     function llShowUpload() {
@@ -483,6 +589,7 @@
     llEl("jsOk").style.color = "#067647";
     llBindFileInput("fileFront", "previewFront", "front");
     llBindFileInput("fileBack", "previewBack", "back");
+    llUpdateOcrButton();
 
     (function loadSupabase() {
       var s = document.createElement("script");
