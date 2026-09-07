@@ -231,7 +231,7 @@
   <div class="wrap">
     <p class="brand">Livelinen</p>
     <h1>Business Card Scanner</h1>
-    <p class="sub">Upload front and back for OCR, or enter details manually.</p>
+    <p class="sub">Take photos with your phone camera or upload images. Front and back OCR, or enter details manually.</p>
     <p id="jsOk">Loading controls…</p>
 
     <div class="tabs">
@@ -241,7 +241,7 @@
 
     <section class="panel" id="uploadPanel">
       <h2>1. Choose dedicated card sides</h2>
-      <p class="hint">Use both options when possible. Front is required. Back is optional.</p>
+      <p class="hint">On phone: <strong>Take photo</strong> opens the camera. <strong>Gallery</strong> picks an existing image. Front is required. Back is optional.</p>
       <div class="upload-grid">
         <div class="side-card" id="cardFront">
           <p class="side-title">
@@ -249,13 +249,17 @@
             <span class="badge req" id="badgeFront">Required</span>
           </p>
           <label class="drop" for="fileFront">
-            <strong>Upload front image</strong>
-            <span>JPG / PNG</span>
+            <strong>Front of card</strong>
+            <span>Camera or gallery · JPG / PNG</span>
           </label>
-          <input type="file" id="fileFront" accept="image/*" capture="environment" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
+          <!-- Gallery: no capture so phones still offer Photos -->
+          <input type="file" id="fileFront" accept="image/*" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
+          <!-- Camera: capture prefers rear camera on mobile -->
+          <input type="file" id="cameraFront" accept="image/*" capture="environment" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
           <img id="previewFront" class="preview" alt="Front preview" />
           <div class="side-actions">
-            <button type="button" class="btn-secondary" onclick="llPickSide('front')">Choose front</button>
+            <button type="button" class="btn-secondary" onclick="llPickSide('front','camera')">Take photo</button>
+            <button type="button" class="btn-secondary" onclick="llPickSide('front','gallery')">Gallery</button>
             <button type="button" class="btn-danger" onclick="llClearSide('front')">Clear</button>
           </div>
         </div>
@@ -266,13 +270,15 @@
             <span class="badge" id="badgeBack">Optional</span>
           </p>
           <label class="drop" for="fileBack">
-            <strong>Upload back image</strong>
-            <span>JPG / PNG</span>
+            <strong>Back of card</strong>
+            <span>Camera or gallery · JPG / PNG</span>
           </label>
-          <input type="file" id="fileBack" accept="image/*" capture="environment" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
+          <input type="file" id="fileBack" accept="image/*" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
+          <input type="file" id="cameraBack" accept="image/*" capture="environment" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
           <img id="previewBack" class="preview" alt="Back preview" />
           <div class="side-actions">
-            <button type="button" class="btn-secondary" onclick="llPickSide('back')">Choose back</button>
+            <button type="button" class="btn-secondary" onclick="llPickSide('back','camera')">Take photo</button>
+            <button type="button" class="btn-secondary" onclick="llPickSide('back','gallery')">Gallery</button>
             <button type="button" class="btn-danger" onclick="llClearSide('back')">Clear</button>
           </div>
         </div>
@@ -360,8 +366,12 @@
       }
     }
 
-    function llPickSide(side) {
-      var input = llEl(side === "front" ? "fileFront" : "fileBack");
+    function llPickSide(side, mode) {
+      var isFront = side === "front";
+      var inputId = mode === "camera"
+        ? (isFront ? "cameraFront" : "cameraBack")
+        : (isFront ? "fileFront" : "fileBack");
+      var input = llEl(inputId);
       // Reset so choosing a new file (even same name) always fires change
       input.value = "";
       input.click();
@@ -371,6 +381,7 @@
       if (side === "front") {
         llFrontFile = null;
         llEl("fileFront").value = "";
+        llEl("cameraFront").value = "";
         if (llFrontPreviewUrl) {
           try { URL.revokeObjectURL(llFrontPreviewUrl); } catch (e) {}
           llFrontPreviewUrl = null;
@@ -380,6 +391,7 @@
       } else {
         llBackFile = null;
         llEl("fileBack").value = "";
+        llEl("cameraBack").value = "";
         if (llBackPreviewUrl) {
           try { URL.revokeObjectURL(llBackPreviewUrl); } catch (e) {}
           llBackPreviewUrl = null;
@@ -390,7 +402,7 @@
       llUpdateOcrButton();
       if (llFrontFile && llBackFile) llSetStatus("ocrStatus", "Front + back ready. Click Run OCR.");
       else if (llFrontFile) llSetStatus("ocrStatus", "Front ready. Add back (optional) or click Run OCR.");
-      else llSetStatus("ocrStatus", "Choose Option A (Front) to continue.");
+      else llSetStatus("ocrStatus", "Take a photo or pick from gallery (Front).");
     }
 
     function llShowUpload() {
@@ -517,9 +529,13 @@
     }
 
     function llCurrentFiles() {
-      // Prefer live <input> FileList; fall back to stored File (after re-pick reset)
-      var frontFromInput = llEl("fileFront").files && llEl("fileFront").files[0];
-      var backFromInput = llEl("fileBack").files && llEl("fileBack").files[0];
+      // Prefer live <input> FileList (gallery or camera); fall back to stored File
+      var frontFromInput =
+        (llEl("fileFront").files && llEl("fileFront").files[0]) ||
+        (llEl("cameraFront").files && llEl("cameraFront").files[0]);
+      var backFromInput =
+        (llEl("fileBack").files && llEl("fileBack").files[0]) ||
+        (llEl("cameraBack").files && llEl("cameraBack").files[0]);
       if (frontFromInput) llFrontFile = frontFromInput;
       if (backFromInput) llBackFile = backFromInput;
       return { front: llFrontFile, back: llBackFile };
@@ -637,7 +653,9 @@
     llEl("jsOk").textContent = "Controls ready.";
     llEl("jsOk").style.color = "#067647";
     llBindFileInput("fileFront", "previewFront", "front");
+    llBindFileInput("cameraFront", "previewFront", "front");
     llBindFileInput("fileBack", "previewBack", "back");
+    llBindFileInput("cameraBack", "previewBack", "back");
     llUpdateOcrButton();
 
     (function loadSupabase() {
