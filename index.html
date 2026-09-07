@@ -3,21 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Review Business Card</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>Livelinen Card Scanner</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: var(--tg-theme-bg-color, #f4f6f8);
-      --text: var(--tg-theme-text-color, #1a1d21);
-      --hint: var(--tg-theme-hint-color, #6b7280);
-      --button: var(--tg-theme-button-color, #2481cc);
-      --button-text: var(--tg-theme-button-text-color, #ffffff);
-      --secondary: var(--tg-theme-secondary-bg-color, #ffffff);
-      --danger: #d92d20;
-      --ok: #079455;
-      --border: rgba(0, 0, 0, 0.08);
-      --radius: 12px;
+      --bg: #f3f5f7;
+      --text: #15202b;
+      --hint: #667685;
+      --card: #ffffff;
+      --line: #d9e1e8;
+      --accent: #0f6e56;
+      --accent-text: #ffffff;
+      --danger: #b42318;
+      --ok: #067647;
+      --radius: 14px;
       --font: "Segoe UI", system-ui, -apple-system, sans-serif;
     }
 
@@ -26,60 +25,96 @@
     body {
       margin: 0;
       font-family: var(--font);
-      background: var(--bg);
+      background:
+        radial-gradient(circle at top left, #dff3ec 0%, transparent 40%),
+        linear-gradient(180deg, #eef3f6 0%, var(--bg) 45%);
       color: var(--text);
       min-height: 100vh;
-      padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+      padding: 24px 16px 40px;
     }
 
-    .wrap { max-width: 480px; margin: 0 auto; }
+    .wrap { max-width: 560px; margin: 0 auto; }
+
+    .brand {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--hint);
+      margin: 0 0 8px;
+    }
 
     h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin: 8px 0 4px;
+      margin: 0 0 8px;
+      font-size: 1.7rem;
+      line-height: 1.2;
     }
 
     .sub {
+      margin: 0 0 24px;
       color: var(--hint);
-      font-size: 0.9rem;
-      margin: 0 0 20px;
+      line-height: 1.45;
     }
 
-    .card {
-      background: var(--secondary);
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 16px;
-      border: 1px solid var(--border);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .drop {
+      border: 1.5px dashed #9db5c4;
+      border-radius: 12px;
+      padding: 28px 16px;
+      text-align: center;
+      background: #f8fbfd;
+      cursor: pointer;
+    }
+
+    .drop strong { display: block; margin-bottom: 6px; }
+    .drop span { color: var(--hint); font-size: 0.9rem; }
+
+    .preview {
+      margin-top: 12px;
+      max-width: 100%;
+      max-height: 220px;
+      border-radius: 10px;
+      display: none;
     }
 
     label {
       display: block;
+      margin: 12px 0 6px;
       font-size: 0.8rem;
       font-weight: 600;
       color: var(--hint);
-      margin: 14px 0 6px;
     }
 
     label:first-child { margin-top: 0; }
 
     input, textarea {
       width: 100%;
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
       border-radius: 10px;
       padding: 12px 14px;
       font: inherit;
       color: var(--text);
-      background: var(--bg);
+      background: #fff;
       outline: none;
     }
 
     input:focus, textarea:focus {
-      border-color: var(--button);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--button) 20%, transparent);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 110, 86, 0.15);
     }
 
-    textarea { min-height: 88px; resize: vertical; }
+    textarea { min-height: 84px; resize: vertical; }
 
     .row {
       display: grid;
@@ -88,19 +123,18 @@
     }
 
     .phone-block {
-      border: 1px dashed var(--border);
+      border: 1px dashed var(--line);
       border-radius: 10px;
       padding: 10px;
       margin-top: 8px;
-      background: var(--bg);
+      background: #f8fbfd;
     }
 
-    .phone-block + .phone-block { margin-top: 10px; }
-
-    .phone-actions {
+    .actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 12px;
     }
 
     button {
@@ -112,11 +146,11 @@
     }
 
     .btn-primary {
-      width: 100%;
-      margin-top: 20px;
-      background: var(--button);
-      color: var(--button-text);
+      background: var(--accent);
+      color: var(--accent-text);
       font-weight: 700;
+      width: 100%;
+      margin-top: 8px;
     }
 
     .btn-primary:disabled {
@@ -124,110 +158,128 @@
       cursor: not-allowed;
     }
 
-    .btn-ghost {
-      background: transparent;
-      color: var(--button);
-      border: 1px solid color-mix(in srgb, var(--button) 35%, transparent);
+    .btn-secondary {
+      background: #e8eef3;
+      color: var(--text);
       flex: 1;
     }
 
     .btn-danger {
-      background: transparent;
+      background: #fff;
       color: var(--danger);
-      border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+      border: 1px solid #f3c0bb;
     }
 
     .status {
-      margin: 12px 0 0;
-      font-size: 0.9rem;
-      min-height: 1.2em;
+      min-height: 1.3em;
+      margin-top: 10px;
+      font-size: 0.92rem;
     }
 
     .status.error { color: var(--danger); }
     .status.ok { color: var(--ok); }
 
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      background: #e8eef3;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: var(--accent-text);
+    }
+
     .hidden { display: none !important; }
 
-    .banner {
-      background: var(--secondary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      text-align: center;
+    @media (max-width: 520px) {
+      .row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Review &amp; Edit</h1>
-    <p class="sub">Verify the OCR details, then save as final.</p>
+    <p class="brand">Livelinen</p>
+    <h1>Business Card Scanner</h1>
+    <p class="sub">Upload a card for OCR, or enter details manually. Review and save when ready.</p>
 
-    <div id="missingId" class="banner hidden">
-      <p>Missing draft ID. Open this page from the Telegram bot “Review &amp; Edit” button.</p>
+    <div class="tabs">
+      <button type="button" class="tab active" id="tabUpload">Upload &amp; OCR</button>
+      <button type="button" class="tab" id="tabManual">Manual entry</button>
     </div>
 
-    <div id="loading" class="banner">Loading draft…</div>
-
-    <form id="cardForm" class="card hidden" novalidate>
-      <div class="row">
-        <div>
-          <label for="first_name">First name</label>
-          <input id="first_name" name="first_name" autocomplete="given-name" />
-        </div>
-        <div>
-          <label for="last_name">Last name</label>
-          <input id="last_name" name="last_name" autocomplete="family-name" />
-        </div>
+    <section class="panel" id="uploadPanel">
+      <h2>1. Upload card image</h2>
+      <div class="drop" id="dropZone">
+        <strong>Click to choose image</strong>
+        <span>JPG, PNG — then run OCR</span>
+        <input type="file" id="fileInput" accept="image/*" hidden />
       </div>
-
-      <label for="company_name">Company</label>
-      <input id="company_name" name="company_name" autocomplete="organization" />
-
-      <label for="emails">Emails <span style="font-weight:400">(one per line)</span></label>
-      <textarea id="emails" name="emails" placeholder="name@company.com"></textarea>
-
-      <label>Phone numbers</label>
-      <div id="phones"></div>
-      <div class="phone-actions">
-        <button type="button" class="btn-ghost" id="addPhone">+ Add phone</button>
+      <img id="preview" class="preview" alt="Card preview" />
+      <div class="actions">
+        <button type="button" class="btn-primary" id="ocrBtn" disabled>Run OCR</button>
       </div>
+      <p class="status" id="ocrStatus" role="status"></p>
+    </section>
 
-      <button type="submit" class="btn-primary" id="saveBtn">Save as Final</button>
-      <p id="statusMsg" class="status" role="status"></p>
-    </form>
+    <section class="panel" id="formPanel">
+      <h2>2. Review / edit details</h2>
+      <form id="cardForm" novalidate>
+        <div class="row">
+          <div>
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" autocomplete="given-name" />
+          </div>
+          <div>
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" autocomplete="family-name" />
+          </div>
+        </div>
+
+        <label for="company_name">Company</label>
+        <input id="company_name" name="company_name" autocomplete="organization" />
+
+        <label for="emails">Emails <span style="font-weight:400">(one per line)</span></label>
+        <textarea id="emails" placeholder="name@company.com"></textarea>
+
+        <label>Phone numbers</label>
+        <div id="phones"></div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="addPhone">+ Add phone</button>
+        </div>
+
+        <button type="submit" class="btn-primary" id="saveBtn">Save card</button>
+        <p class="status" id="saveStatus" role="status"></p>
+      </form>
+    </section>
   </div>
 
   <script>
-    // ——— Configuration (Supabase publishable / anon key is safe in frontend) ———
+    // ——— Config ———
     const SUPABASE_URL = "https://xukgkqxkujygsupdjvvd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1a2drcXhrdWp5Z3N1cGRqdnZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTYwNTAsImV4cCI6MjA5NjIzMjA1MH0.N5hqWj9EvdrfEpwu6gVNuBwglRKlp-Z_lzJzKvdHyY4";
 
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
+    // n8n Webhook Production URL
+    const N8N_OCR_WEBHOOK_URL = "https://n8n.livelinen.org/webhook/c0ddefcc-4deb-49e6-a8c0-72c49da00a64";
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const params = new URLSearchParams(window.location.search);
-    const draftId = params.get("draft_id");
-    const isDemo = params.get("demo") === "1";
-
-    const DEMO_CARD = {
-      first_name: "Priya",
-      last_name: "Sharma",
-      company_name: "Livelinen Textiles",
-      emails: ["priya.sharma@livelinen.com", "sales@livelinen.com"],
-      phone_numbers: [
-        { type: "mobile", number: "+91 98765 43210" },
-        { type: "office", number: "+91 22 1234 5678" },
-      ],
-    };
-
     const el = {
-      missingId: document.getElementById("missingId"),
-      loading: document.getElementById("loading"),
+      tabUpload: document.getElementById("tabUpload"),
+      tabManual: document.getElementById("tabManual"),
+      uploadPanel: document.getElementById("uploadPanel"),
+      dropZone: document.getElementById("dropZone"),
+      fileInput: document.getElementById("fileInput"),
+      preview: document.getElementById("preview"),
+      ocrBtn: document.getElementById("ocrBtn"),
+      ocrStatus: document.getElementById("ocrStatus"),
       form: document.getElementById("cardForm"),
       first_name: document.getElementById("first_name"),
       last_name: document.getElementById("last_name"),
@@ -236,12 +288,21 @@
       phones: document.getElementById("phones"),
       addPhone: document.getElementById("addPhone"),
       saveBtn: document.getElementById("saveBtn"),
-      statusMsg: document.getElementById("statusMsg"),
+      saveStatus: document.getElementById("saveStatus"),
     };
 
-    function setStatus(message, type) {
-      el.statusMsg.textContent = message || "";
-      el.statusMsg.className = "status" + (type ? " " + type : "");
+    let selectedFile = null;
+
+    function setStatus(node, message, type) {
+      node.textContent = message || "";
+      node.className = "status" + (type ? " " + type : "");
+    }
+
+    function escapeAttr(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
     }
 
     function phoneRow(phone = { type: "mobile", number: "" }) {
@@ -252,7 +313,7 @@
         <input class="phone-type" value="${escapeAttr(phone.type || "mobile")}" placeholder="mobile / office / fax" />
         <label>Number</label>
         <input class="phone-number" value="${escapeAttr(phone.number || "")}" placeholder="+91..." inputmode="tel" />
-        <div class="phone-actions">
+        <div class="actions">
           <button type="button" class="btn-danger remove-phone">Remove</button>
         </div>
       `;
@@ -263,21 +324,25 @@
       return wrap;
     }
 
-    function escapeAttr(value) {
-      return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/</g, "&lt;");
-    }
-
     function addPhone(phone) {
       el.phones.appendChild(phoneRow(phone));
+    }
+
+    function fillForm(data) {
+      el.first_name.value = data.first_name || "";
+      el.last_name.value = data.last_name || "";
+      el.company_name.value = data.company_name || "";
+      el.emails.value = Array.isArray(data.emails) ? data.emails.join("\n") : "";
+      el.phones.innerHTML = "";
+      const phones = Array.isArray(data.phone_numbers) ? data.phone_numbers : [];
+      if (phones.length) phones.forEach(addPhone);
+      else addPhone();
     }
 
     function readPhones() {
       return Array.from(el.phones.querySelectorAll(".phone-block"))
         .map((block) => ({
-          type: block.querySelector(".phone-type").value.trim() || "mobile",
+          type: block.querySelector(".phone-type").value.trim() || "other",
           number: block.querySelector(".phone-number").value.trim(),
         }))
         .filter((p) => p.number);
@@ -290,58 +355,100 @@
         .filter(Boolean);
     }
 
-    function fillForm(data) {
-      el.first_name.value = data.first_name || "";
-      el.last_name.value = data.last_name || "";
-      el.company_name.value = data.company_name || "";
-      el.emails.value = Array.isArray(data.emails) ? data.emails.join("\n") : "";
-
-      const phones = Array.isArray(data.phone_numbers) ? data.phone_numbers : [];
-      el.phones.innerHTML = "";
-      if (phones.length) phones.forEach(addPhone);
-      else addPhone();
-
-      el.loading.classList.add("hidden");
-      el.form.classList.remove("hidden");
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result || "");
+          const base64 = result.includes(",") ? result.split(",")[1] : result;
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
-    async function loadDraft() {
-      // UI-only test mode — no Supabase required
-      if (isDemo) {
-        fillForm(DEMO_CARD);
-        setStatus("Demo mode — edits are not saved to a database.", "");
-        return;
-      }
-
-      if (!draftId) {
-        el.loading.classList.add("hidden");
-        el.missingId.classList.remove("hidden");
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("visiting_cards")
-        .select("*")
-        .eq("id", draftId)
-        .single();
-
-      if (error || !data) {
-        el.loading.classList.add("hidden");
-        el.missingId.classList.remove("hidden");
-        el.missingId.querySelector("p").textContent =
-          "Could not load this draft. It may have been deleted, or the table is not set up yet.";
-        console.error(error);
-        return;
-      }
-
-      fillForm(data);
+    function showUploadMode() {
+      el.tabUpload.classList.add("active");
+      el.tabManual.classList.remove("active");
+      el.uploadPanel.classList.remove("hidden");
     }
+
+    function showManualMode() {
+      el.tabManual.classList.add("active");
+      el.tabUpload.classList.remove("active");
+      el.uploadPanel.classList.add("hidden");
+      setStatus(el.ocrStatus, "");
+      if (!el.phones.children.length) addPhone();
+      el.first_name.focus();
+    }
+
+    el.tabUpload.addEventListener("click", showUploadMode);
+    el.tabManual.addEventListener("click", showManualMode);
+
+    el.dropZone.addEventListener("click", () => el.fileInput.click());
+    el.fileInput.addEventListener("change", () => {
+      const file = el.fileInput.files?.[0];
+      if (!file) return;
+      selectedFile = file;
+      el.preview.src = URL.createObjectURL(file);
+      el.preview.style.display = "block";
+      el.ocrBtn.disabled = false;
+      setStatus(el.ocrStatus, "Image ready. Click Run OCR.", "");
+    });
 
     el.addPhone.addEventListener("click", () => addPhone());
 
+    el.ocrBtn.addEventListener("click", async () => {
+      if (!selectedFile) return;
+
+      if (!N8N_OCR_WEBHOOK_URL) {
+        setStatus(
+          el.ocrStatus,
+          "Set N8N_OCR_WEBHOOK_URL in index.html first (n8n Webhook Production URL).",
+          "error"
+        );
+        return;
+      }
+
+      el.ocrBtn.disabled = true;
+      setStatus(el.ocrStatus, "Running OCR…", "");
+
+      try {
+        const imageBase64 = await fileToBase64(selectedFile);
+        const res = await fetch(N8N_OCR_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: selectedFile.name,
+            mimeType: selectedFile.type || "image/jpeg",
+            imageBase64,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error("OCR webhook failed (" + res.status + ")");
+        }
+
+        const data = await res.json();
+        fillForm(data);
+        setStatus(el.ocrStatus, "OCR done. Review the form below.", "ok");
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          el.ocrStatus,
+          "OCR failed: " + (err.message || "unknown error") + ". You can still type manually.",
+          "error"
+        );
+        showManualMode();
+      } finally {
+        el.ocrBtn.disabled = !selectedFile;
+      }
+    });
+
     el.form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      setStatus("");
+      setStatus(el.saveStatus, "");
       el.saveBtn.disabled = true;
 
       const payload = {
@@ -353,34 +460,24 @@
         status: "final",
       };
 
-      if (isDemo) {
-        console.log("Demo save payload:", payload);
-        el.saveBtn.disabled = false;
-        setStatus("Demo save OK (not written to Supabase).", "ok");
-        return;
-      }
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("visiting_cards")
-        .update(payload)
-        .eq("id", draftId);
+        .insert(payload)
+        .select("id")
+        .single();
 
       el.saveBtn.disabled = false;
 
       if (error) {
-        setStatus("Save failed: " + error.message, "error");
+        setStatus(el.saveStatus, "Save failed: " + error.message, "error");
         console.error(error);
         return;
       }
 
-      setStatus("Saved as final.", "ok");
-      if (tg) {
-        tg.HapticFeedback?.notificationOccurred?.("success");
-        setTimeout(() => tg.close(), 900);
-      }
+      setStatus(el.saveStatus, "Saved. ID: " + data.id, "ok");
     });
 
-    loadDraft();
+    addPhone();
   </script>
 </body>
 </html>
