@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Review Business Card</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #f4f6f8);
+      --text: var(--tg-theme-text-color, #1a1d21);
+      --hint: var(--tg-theme-hint-color, #6b7280);
+      --button: var(--tg-theme-button-color, #2481cc);
+      --button-text: var(--tg-theme-button-text-color, #ffffff);
+      --secondary: var(--tg-theme-secondary-bg-color, #ffffff);
+      --danger: #d92d20;
+      --ok: #079455;
+      --border: rgba(0, 0, 0, 0.08);
+      --radius: 12px;
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+    }
+
+    .wrap { max-width: 480px; margin: 0 auto; }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 8px 0 4px;
+    }
+
+    .sub {
+      color: var(--hint);
+      font-size: 0.9rem;
+      margin: 0 0 20px;
+    }
+
+    .card {
+      background: var(--secondary);
+      border-radius: var(--radius);
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--hint);
+      margin: 14px 0 6px;
+    }
+
+    label:first-child { margin-top: 0; }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--button);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--button) 20%, transparent);
+    }
+
+    textarea { min-height: 88px; resize: vertical; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .phone-block {
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 8px;
+      background: var(--bg);
+    }
+
+    .phone-block + .phone-block { margin-top: 10px; }
+
+    .phone-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    button {
+      font: inherit;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      width: 100%;
+      margin-top: 20px;
+      background: var(--button);
+      color: var(--button-text);
+      font-weight: 700;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--button);
+      border: 1px solid color-mix(in srgb, var(--button) 35%, transparent);
+      flex: 1;
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+    }
+
+    .status {
+      margin: 12px 0 0;
+      font-size: 0.9rem;
+      min-height: 1.2em;
+    }
+
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--ok); }
+
+    .hidden { display: none !important; }
+
+    .banner {
+      background: var(--secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Review &amp; Edit</h1>
+    <p class="sub">Verify the OCR details, then save as final.</p>
+
+    <div id="missingId" class="banner hidden">
+      <p>Missing draft ID. Open this page from the Telegram bot “Review &amp; Edit” button.</p>
+    </div>
+
+    <div id="loading" class="banner">Loading draft…</div>
+
+    <form id="cardForm" class="card hidden" novalidate>
+      <div class="row">
+        <div>
+          <label for="first_name">First name</label>
+          <input id="first_name" name="first_name" autocomplete="given-name" />
+        </div>
+        <div>
+          <label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" autocomplete="family-name" />
+        </div>
+      </div>
+
+      <label for="company_name">Company</label>
+      <input id="company_name" name="company_name" autocomplete="organization" />
+
+      <label for="emails">Emails <span style="font-weight:400">(one per line)</span></label>
+      <textarea id="emails" name="emails" placeholder="name@company.com"></textarea>
+
+      <label>Phone numbers</label>
+      <div id="phones"></div>
+      <div class="phone-actions">
+        <button type="button" class="btn-ghost" id="addPhone">+ Add phone</button>
+      </div>
+
+      <button type="submit" class="btn-primary" id="saveBtn">Save as Final</button>
+      <p id="statusMsg" class="status" role="status"></p>
+    </form>
+  </div>
+
+  <script>
+    // ——— Configuration (Supabase publishable / anon key is safe in frontend) ———
+    const SUPABASE_URL = "https://xukgkqxkujygsupdjvvd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1a2drcXhrdWp5Z3N1cGRqdnZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTYwNTAsImV4cCI6MjA5NjIzMjA1MH0.N5hqWj9EvdrfEpwu6gVNuBwglRKlp-Z_lzJzKvdHyY4";
+
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const params = new URLSearchParams(window.location.search);
+    const draftId = params.get("draft_id");
+
+    const el = {
+      missingId: document.getElementById("missingId"),
+      loading: document.getElementById("loading"),
+      form: document.getElementById("cardForm"),
+      first_name: document.getElementById("first_name"),
+      last_name: document.getElementById("last_name"),
+      company_name: document.getElementById("company_name"),
+      emails: document.getElementById("emails"),
+      phones: document.getElementById("phones"),
+      addPhone: document.getElementById("addPhone"),
+      saveBtn: document.getElementById("saveBtn"),
+      statusMsg: document.getElementById("statusMsg"),
+    };
+
+    function setStatus(message, type) {
+      el.statusMsg.textContent = message || "";
+      el.statusMsg.className = "status" + (type ? " " + type : "");
+    }
+
+    function phoneRow(phone = { type: "mobile", number: "" }) {
+      const wrap = document.createElement("div");
+      wrap.className = "phone-block";
+      wrap.innerHTML = `
+        <label>Type</label>
+        <input class="phone-type" value="${escapeAttr(phone.type || "mobile")}" placeholder="mobile / office / fax" />
+        <label>Number</label>
+        <input class="phone-number" value="${escapeAttr(phone.number || "")}" placeholder="+91..." inputmode="tel" />
+        <div class="phone-actions">
+          <button type="button" class="btn-danger remove-phone">Remove</button>
+        </div>
+      `;
+      wrap.querySelector(".remove-phone").addEventListener("click", () => {
+        wrap.remove();
+        if (!el.phones.children.length) addPhone();
+      });
+      return wrap;
+    }
+
+    function escapeAttr(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    }
+
+    function addPhone(phone) {
+      el.phones.appendChild(phoneRow(phone));
+    }
+
+    function readPhones() {
+      return Array.from(el.phones.querySelectorAll(".phone-block"))
+        .map((block) => ({
+          type: block.querySelector(".phone-type").value.trim() || "mobile",
+          number: block.querySelector(".phone-number").value.trim(),
+        }))
+        .filter((p) => p.number);
+    }
+
+    function readEmails() {
+      return el.emails.value
+        .split(/\r?\n|,|;/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+
+    async function loadDraft() {
+      if (!draftId) {
+        el.loading.classList.add("hidden");
+        el.missingId.classList.remove("hidden");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("visiting_cards")
+        .select("*")
+        .eq("id", draftId)
+        .single();
+
+      el.loading.classList.add("hidden");
+
+      if (error || !data) {
+        el.missingId.classList.remove("hidden");
+        el.missingId.querySelector("p").textContent =
+          "Could not load this draft. It may have been deleted, or the table is not set up yet.";
+        console.error(error);
+        return;
+      }
+
+      el.first_name.value = data.first_name || "";
+      el.last_name.value = data.last_name || "";
+      el.company_name.value = data.company_name || "";
+      el.emails.value = Array.isArray(data.emails) ? data.emails.join("\n") : "";
+
+      const phones = Array.isArray(data.phone_numbers) ? data.phone_numbers : [];
+      el.phones.innerHTML = "";
+      if (phones.length) phones.forEach(addPhone);
+      else addPhone();
+
+      el.form.classList.remove("hidden");
+    }
+
+    el.addPhone.addEventListener("click", () => addPhone());
+
+    el.form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setStatus("");
+      el.saveBtn.disabled = true;
+
+      const payload = {
+        first_name: el.first_name.value.trim(),
+        last_name: el.last_name.value.trim(),
+        company_name: el.company_name.value.trim(),
+        emails: readEmails(),
+        phone_numbers: readPhones(),
+        status: "final",
+      };
+
+      const { error } = await supabase
+        .from("visiting_cards")
+        .update(payload)
+        .eq("id", draftId);
+
+      el.saveBtn.disabled = false;
+
+      if (error) {
+        setStatus("Save failed: " + error.message, "error");
+        console.error(error);
+        return;
+      }
+
+      setStatus("Saved as final.", "ok");
+      if (tg) {
+        tg.HapticFeedback?.notificationOccurred?.("success");
+        setTimeout(() => tg.close(), 900);
+      }
+    });
+
+    loadDraft();
+  </script>
+</body>
+</html>
